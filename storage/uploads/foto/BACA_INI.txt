@@ -1,0 +1,2 @@
+Direktori ini digunakan untuk menyimpan upload foto artikel.
+Pastikan folder ini dapat ditulis oleh web server (writable).

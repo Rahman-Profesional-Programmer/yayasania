@@ -1,0 +1,19 @@
+{
+  "name": "mcp-server",
+  "version": "1.0.0",
+  "description": "Readonly MCP helper for yayasania",
+  "main": "server.js",
+  "scripts": {
+    "test": "node -e \"console.log('no tests yet')\"",
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "mysql2": "^3.20.0"
+  }
+}
