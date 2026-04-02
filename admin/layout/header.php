@@ -57,7 +57,9 @@ $pageTitle = $pageTitle ?? 'Admin Yayasan IA';
                             <img src="<?= ADMIN_ASSETS ?>images/avatars/avatar-1.png" class="user-img" alt="">
                             <div class="d-none d-sm-block">
                                 <p class="user-name mb-0"><?= htmlspecialchars($_SESSION['name'] ?? 'Admin') ?></p>
-                                <small class="mb-0 dropdown-user-designation">Administrator</small>
+                                <small class="mb-0 dropdown-user-designation">
+                                    <?= (($_SESSION['role'] ?? 'user') === 'admin') ? 'Administrator' : 'User Panel' ?>
+                                </small>
                             </div>
                         </div>
                     </a>

@@ -1,10 +1,8 @@
 <?php
-// Memulai sesi PHP
 session_start();
 
-// Membuat koneksi ke database
-// $conn = mysqli_connect("localhost", "root", "", "ihsanul-web");
-require_once 'koneksi_db.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 // Mengambil data dari form login
 $email = $_POST['email'];
@@ -18,29 +16,41 @@ if (empty($email) || empty($password)) {
     exit();
 }
 
-// Mengecek apakah email dan password cocok dengan data di database
-$query = "SELECT * FROM users WHERE email = '$email' AND pass = '$password'";
-$result = mysqli_query($conn, $query);
+$stmt = $conn->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
+$stmt->bind_param("s", $email);
+$stmt->execute();
+$result = $stmt->get_result();
 
-if (mysqli_num_rows($result) == 1) {
-    // Jika cocok, cek status aktif user
-    $row = mysqli_fetch_assoc($result);
-    if ($row['enable'] == 1) {
-        // Jika user aktif, simpan data user ke dalam variabel session
-        $_SESSION['name'] = $row['name_show'];
-        $_SESSION['email'] = $row['email'];
-        // Redirect ke halaman dashboard
-        header("Location: crud-menu.php");
-        exit();
-    } else {
-        // Jika user tidak aktif, kembali ke halaman login dengan pesan error
+if ($result->num_rows === 1) {
+    $row = $result->fetch_assoc();
+
+    if (verifyPassword($password, $row['pass'])) {
+        if ((int) $row['enable'] === 1) {
+            if (needsPasswordRehash($row['pass'])) {
+                $newHash = hashPassword($password);
+                $updatePassword = $conn->prepare("UPDATE users SET pass = ? WHERE id = ?");
+                $updatePassword->bind_param("si", $newHash, $row['id']);
+                $updatePassword->execute();
+                $updatePassword->close();
+            }
+
+            $_SESSION['user_id'] = (int) $row['id'];
+            $_SESSION['name'] = $row['name_show'];
+            $_SESSION['email'] = $row['email'];
+            $_SESSION['role'] = $row['role'] ?? 'user';
+            $stmt->close();
+            header("Location: crud-menu.php");
+            exit();
+        }
+
         $_SESSION['error'] = "Akun Anda belum aktif";
+        $stmt->close();
         header("Location: authentication-signin.php");
         exit();
     }
-} else {
-    // Jika email atau password salah, kembali ke halaman login dengan pesan error
-    $_SESSION['error'] = "Email atau password salah";
-    header("Location: authentication-signin.php");
-    exit();
 }
+
+$stmt->close();
+$_SESSION['error'] = "Email atau password salah";
+header("Location: authentication-signin.php");
+exit();

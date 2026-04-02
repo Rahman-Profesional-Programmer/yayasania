@@ -30,6 +30,15 @@
 
         <li class="menu-label">Sistem</li>
 
+        <?php if (isAdmin()): ?>
+        <li>
+            <a href="<?= ADMIN_URL ?>users/index.php">
+                <div class="parent-icon"><i class="bi bi-people-fill"></i></div>
+                <div class="menu-title">Manajemen Pengguna</div>
+            </a>
+        </li>
+        <?php endif; ?>
+
         <li>
             <a href="<?= PUBLIC_URL ?>home.php" target="_blank">
                 <div class="parent-icon"><i class="bi bi-globe"></i></div>

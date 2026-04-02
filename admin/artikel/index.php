@@ -128,4 +128,16 @@ function hapusArtikel(id) {
 }
 </script>
 
+<?php if (!empty($_SESSION['swal_flash'])): ?>
+<?php $swal = $_SESSION['swal_flash']; unset($_SESSION['swal_flash']); ?>
+<script>
+Swal.fire({
+    icon: <?= json_encode($swal['icon'] ?? 'info') ?>,
+    title: <?= json_encode($swal['title'] ?? '') ?>,
+    text: <?= json_encode($swal['text'] ?? '') ?>,
+    confirmButtonColor: '#0d6efd'
+});
+</script>
+<?php endif; ?>
+
 <?php require_once __DIR__ . '/../layout/footer.php'; ?>

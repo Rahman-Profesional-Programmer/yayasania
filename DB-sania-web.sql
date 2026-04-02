@@ -24,6 +24,7 @@ CREATE TABLE `users` (
   `diskripsi`   TEXT         DEFAULT NULL        COMMENT 'Bio / deskripsi penulis',
   `facebook`    VARCHAR(255) DEFAULT NULL,
   `instagram`   VARCHAR(255) DEFAULT NULL,
+  `role`        ENUM('admin','user') NOT NULL DEFAULT 'user' COMMENT 'Level akses panel admin',
   `enable`      TINYINT(1)   NOT NULL DEFAULT 1  COMMENT '1=aktif, 0=nonaktif'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -146,9 +147,9 @@ DELIMITER ;
 -- DATA AWAL (contoh agar web bisa langsung jalan)
 -- ============================================================
 
--- User admin default (password: admin123 — GANTI segera di production!)
-INSERT INTO `users` (`email`, `pass`, `name_show`, `foto`, `diskripsi`, `facebook`, `instagram`, `enable`)
-VALUES ('ermasmpit@gmail.com', 'admin123', 'Admin Yayasan', NULL, 'Administrator Yayasan Ihsanul Amal', NULL, NULL, 1);
+-- User admin default (password asli: admin123 — sudah disimpan dalam bentuk bcrypt hash)
+INSERT INTO `users` (`email`, `pass`, `name_show`, `foto`, `diskripsi`, `facebook`, `instagram`, `role`, `enable`)
+VALUES ('ermasmpit@gmail.com', '$2y$10$1gdLVYp4OMFWF66OvYkR7uz.T1DegnEnfQ4p1jwQQca.X3x.frnQm', 'Admin Yayasan', NULL, 'Administrator Yayasan Ihsanul Amal', NULL, NULL, 'admin', 1);
 
 -- Menu utama
 INSERT INTO `menu_utama` (`urutan`, `nama_menu`, `link_menu`, `link_menu_active`, `enable`) VALUES

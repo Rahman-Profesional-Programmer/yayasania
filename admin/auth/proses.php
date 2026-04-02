@@ -24,11 +24,20 @@ $result = $stmt->get_result();
 
 if ($result->num_rows === 1) {
     $row = $result->fetch_assoc();
-    // Bandingkan password — ganti dengan password_verify() jika sudah di-hash
-    if ($row['pass'] === $password) {
+    if (verifyPassword($password, $row['pass'])) {
         if ($row['enable'] == 1) {
+            if (needsPasswordRehash($row['pass'])) {
+                $newHash = hashPassword($password);
+                $updatePassword = $conn->prepare("UPDATE users SET pass = ? WHERE id = ?");
+                $updatePassword->bind_param("si", $newHash, $row['id']);
+                $updatePassword->execute();
+                $updatePassword->close();
+            }
+
+            $_SESSION['user_id'] = (int) $row['id'];
             $_SESSION['name']  = $row['name_show'];
             $_SESSION['email'] = $row['email'];
+            $_SESSION['role']  = $row['role'] ?? 'user';
             $stmt->close();
             redirect(ADMIN_URL . 'menu/index.php');
         } else {
