@@ -140,11 +140,14 @@ function renderSwalFlash(): void
     unset($_SESSION['swal_flash']);
 
     echo '<script>';
+    echo 'window.addEventListener("load", function () {';
+    echo 'if (typeof Swal === "undefined") { return; }';
     echo 'Swal.fire({';
     echo 'icon:' . json_encode($swal['icon'] ?? 'info') . ',';
     echo 'title:' . json_encode($swal['title'] ?? '') . ',';
     echo 'text:' . json_encode($swal['text'] ?? '') . ',';
     echo 'confirmButtonColor:"#0d6efd"';
+    echo '});';
     echo '});';
     echo '</script>';
 }
@@ -195,6 +198,69 @@ function e($value): string
     }
 
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Cek apakah string adalah URL eksternal
+ */
+function isExternalUrl(?string $value): bool
+{
+    if (!$value) {
+        return false;
+    }
+
+    return (bool) preg_match('#^https?://#i', trim($value));
+}
+
+/**
+ * Ubah path gambar menjadi URL yang siap dipakai di view
+ */
+function mediaUrl(?string $value): string
+{
+    $value = trim((string) ($value ?? ''));
+
+    if ($value === '') {
+        return '';
+    }
+
+    if (isExternalUrl($value)) {
+        return $value;
+    }
+
+    return BASE_URL . ltrim($value, '/');
+}
+
+/**
+ * Simpan data URI/base64 image ke folder upload dan kembalikan path relatifnya
+ */
+function saveBase64Image(string $dataUri): ?string
+{
+    if (!preg_match('#^data:image/(jpeg|jpg|png|webp|gif);base64,#i', $dataUri, $matches)) {
+        return null;
+    }
+
+    $extension = strtolower($matches[1]);
+    if ($extension === 'jpeg') {
+        $extension = 'jpg';
+    }
+
+    $binary = base64_decode(substr($dataUri, strpos($dataUri, ',') + 1), true);
+    if ($binary === false) {
+        return null;
+    }
+
+    if (!is_dir(UPLOAD_PATH)) {
+        mkdir(UPLOAD_PATH, 0755, true);
+    }
+
+    $fileName = time() . '-' . bin2hex(random_bytes(4)) . '.' . $extension;
+    $fullPath = UPLOAD_PATH . $fileName;
+
+    if (file_put_contents($fullPath, $binary) === false) {
+        return null;
+    }
+
+    return 'storage/uploads/foto/' . $fileName;
 }
 
 /**

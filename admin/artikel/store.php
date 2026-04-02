@@ -10,40 +10,73 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $judul    = $_POST['judul_artikel'] ?? '';
 $isi      = $_POST['isi_artikel']   ?? '';
-$kategori = $_POST['kategori']      ?? '';
-$tag_raw  = $_POST['tag']           ?? '';
+$kategori = trim((string) ($_POST['kategori'] ?? ''));
+$tag_raw  = $_POST['tag']           ?? [];
 $penulis  = $_SESSION['email']      ?? DEFAULT_USER_EMAIL;
+$gambar_source = $_POST['gambar_source'] ?? 'file';
+$gambar_link = trim((string) ($_POST['gambar_link'] ?? ''));
+$gambar_cropped_data = trim((string) ($_POST['gambar_cropped_data'] ?? ''));
 
-if ($kategori === 'lain') {
-    $kategori = trim($_POST['kategori_baru'] ?? '');
+if ($judul === '' || $isi === '' || $kategori === '') {
+    setSwalFlash('error', 'Data belum lengkap', 'Judul, kategori, dan isi artikel wajib diisi.');
+    redirect(ADMIN_URL . 'artikel/create.php');
 }
 
-// Upload foto
-$foto     = $_FILES['foto'] ?? null;
-if (!$foto || $foto['error'] !== UPLOAD_ERR_OK) {
-    die("Gagal mengunggah foto. Silakan kembali dan coba lagi.");
-}
+// Sumber gambar: link atau file
+$foto = $_FILES['foto'] ?? null;
+$link_foto = '';
 
-if ($foto['size'] > 5_000_000) {
-    die("Ukuran file terlalu besar (maks 5MB).");
-}
+if ($gambar_source === 'link') {
+    if ($gambar_link === '' || !filter_var($gambar_link, FILTER_VALIDATE_URL)) {
+        setSwalFlash('error', 'Link tidak valid', 'Masukkan URL gambar yang valid.');
+        redirect(ADMIN_URL . 'artikel/create.php');
+    }
 
-$ekstensi  = strtolower(pathinfo($foto['name'], PATHINFO_EXTENSION));
-$allowed   = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-if (!in_array($ekstensi, $allowed)) {
-    die("Format file tidak diizinkan.");
-}
+    if (mb_strlen($gambar_link) > 500) {
+        setSwalFlash('error', 'Link terlalu panjang', 'Panjang link gambar melebihi batas penyimpanan database.');
+        redirect(ADMIN_URL . 'artikel/create.php');
+    }
 
-$nama_baru  = time() . '.' . $ekstensi;
-$path_fisik = UPLOAD_PATH . $nama_baru;
-$link_foto  = 'storage/uploads/foto/' . $nama_baru;
+    $link_foto = $gambar_link;
+} else {
+    if ($gambar_cropped_data !== '') {
+        $savedImage = saveBase64Image($gambar_cropped_data);
+        if ($savedImage === null) {
+            setSwalFlash('error', 'Crop gagal', 'Hasil crop gambar tidak valid. Silakan coba lagi.');
+            redirect(ADMIN_URL . 'artikel/create.php');
+        }
+        $link_foto = $savedImage;
+    } else {
+        if (!$foto || $foto['error'] !== UPLOAD_ERR_OK) {
+            setSwalFlash('error', 'Upload gagal', 'Gagal mengunggah foto. Silakan coba lagi.');
+            redirect(ADMIN_URL . 'artikel/create.php');
+        }
 
-if (!is_dir(UPLOAD_PATH)) {
-    mkdir(UPLOAD_PATH, 0755, true);
-}
+        if ($foto['size'] > 5_000_000) {
+            setSwalFlash('error', 'Upload gagal', 'Ukuran file terlalu besar (maks 5MB).');
+            redirect(ADMIN_URL . 'artikel/create.php');
+        }
 
-if (!move_uploaded_file($foto['tmp_name'], $path_fisik)) {
-    die("Gagal memindahkan file foto.");
+        $ekstensi  = strtolower(pathinfo($foto['name'], PATHINFO_EXTENSION));
+        $allowed   = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        if (!in_array($ekstensi, $allowed, true)) {
+            setSwalFlash('error', 'Upload gagal', 'Format file tidak diizinkan.');
+            redirect(ADMIN_URL . 'artikel/create.php');
+        }
+
+        $nama_baru  = time() . '.' . $ekstensi;
+        $path_fisik = UPLOAD_PATH . $nama_baru;
+        $link_foto  = 'storage/uploads/foto/' . $nama_baru;
+
+        if (!is_dir(UPLOAD_PATH)) {
+            mkdir(UPLOAD_PATH, 0755, true);
+        }
+
+        if (!move_uploaded_file($foto['tmp_name'], $path_fisik)) {
+            setSwalFlash('error', 'Upload gagal', 'Gagal memindahkan file foto.');
+            redirect(ADMIN_URL . 'artikel/create.php');
+        }
+    }
 }
 
 // Insert artikel dengan prepared statement
@@ -58,7 +91,10 @@ if ($stmt->execute()) {
     $stmt->close();
 
     // Insert tags
-    $tags = array_filter(array_map('trim', explode(',', $tag_raw)));
+    if (!is_array($tag_raw)) {
+        $tag_raw = array_map('trim', explode(',', (string) $tag_raw));
+    }
+    $tags = array_values(array_unique(array_filter(array_map('trim', $tag_raw))));
     if (!empty($tags)) {
         $stmt_tag = $conn->prepare("INSERT INTO artikel_tag (id_artikel, tag) VALUES (?, ?)");
         foreach ($tags as $tag) {
@@ -67,13 +103,10 @@ if ($stmt->execute()) {
         }
         $stmt_tag->close();
     }
-
-    echo '<link rel="stylesheet" href="' . ADMIN_ASSETS . 'plugins/sweetalert2/css/sweetalert2.min.css">';
-    echo '<script src="' . ADMIN_ASSETS . 'plugins/sweetalert2/js/sweetalert2.min.js"></script>';
-    echo '<script>Swal.fire({icon:"success",title:"Berhasil",text:"Artikel berhasil ditambahkan",confirmButtonColor:"#0d6efd"}).then(function(){window.location.href="' . ADMIN_URL . 'artikel/index.php";});</script>';
+    setSwalFlash('success', 'Berhasil', 'Artikel berhasil ditambahkan.');
+    redirect(ADMIN_URL . 'artikel/index.php');
 } else {
     $stmt->close();
-    echo '<link rel="stylesheet" href="' . ADMIN_ASSETS . 'plugins/sweetalert2/css/sweetalert2.min.css">';
-    echo '<script src="' . ADMIN_ASSETS . 'plugins/sweetalert2/js/sweetalert2.min.js"></script>';
-    echo '<script>Swal.fire({icon:"error",title:"Gagal",text:"Artikel gagal ditambahkan",confirmButtonColor:"#0d6efd"}).then(function(){window.history.back();});</script>';
+    setSwalFlash('error', 'Gagal', 'Artikel gagal ditambahkan.');
+    redirect(ADMIN_URL . 'artikel/create.php');
 }

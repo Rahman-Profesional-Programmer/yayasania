@@ -22,10 +22,15 @@ $stmt_tag->execute();
 $row_tag  = $stmt_tag->get_result()->fetch_assoc();
 $stmt_tag->close();
 $tags_string = $row_tag['tags'] ?? '';
+$tags_array = array_filter(array_map('trim', explode(',', (string) $tags_string)));
 
 // Ambil kategori
 $res_kat = $conn->query("SELECT DISTINCT kategori FROM artikel ORDER BY kategori");
+
+// Ambil daftar tag yang sudah ada
+$res_tag = $conn->query("SELECT DISTINCT tag FROM artikel_tag ORDER BY tag");
 $pageTitle = "Edit Artikel";
+$gambar_awal = $artikel['gambar'] ? mediaUrl($artikel['gambar']) : '';
 ?>
 <?php require_once __DIR__ . '/../layout/header.php'; ?>
 <?php require_once __DIR__ . '/../layout/sidebar.php'; ?>
@@ -48,7 +53,7 @@ $pageTitle = "Edit Artikel";
             <h6 class="mb-0">Edit Artikel #<?= $id ?></h6>
         </div>
         <div class="card-body">
-            <form class="row g-3" action="<?= ADMIN_URL ?>artikel/update.php" method="POST" enctype="multipart/form-data">
+            <form class="row g-3 article-form" action="<?= ADMIN_URL ?>artikel/update.php" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="id_artikel" value="<?= $id ?>">
 
                 <div class="col-12">
@@ -58,35 +63,76 @@ $pageTitle = "Edit Artikel";
 
                 <div class="col-12 col-md-6">
                     <label class="form-label">Kategori</label>
-                    <select name="kategori" class="form-select">
+                    <select name="kategori" class="form-select select2-kategori" required>
                         <option value="">-- Pilih Kategori --</option>
                         <?php while ($k = $res_kat->fetch_assoc()): ?>
                             <option value="<?= e($k['kategori']) ?>" <?= $k['kategori'] === $artikel['kategori'] ? 'selected' : '' ?>>
                                 <?= e($k['kategori']) ?>
                             </option>
                         <?php endwhile; ?>
-                        <option value="lain">+ Kategori Baru</option>
                     </select>
                 </div>
 
-                <div class="col-12 col-md-6" id="kategori-baru-wrap" style="display:none">
-                    <label class="form-label">Nama Kategori Baru</label>
-                    <input type="text" name="kategori_baru" class="form-control" placeholder="Nama kategori baru">
+                <div class="col-12">
+                    <label class="form-label d-block">Sumber Gambar</label>
+                    <div class="btn-group w-100" role="group" aria-label="Sumber gambar">
+                        <input type="radio" class="btn-check" name="gambar_source" id="gambarSourceFileEdit" value="file" <?= preg_match('#^https?://#i', (string) $artikel['gambar']) ? '' : 'checked' ?>>
+                        <label class="btn btn-outline-primary" for="gambarSourceFileEdit">Upload File</label>
+
+                        <input type="radio" class="btn-check" name="gambar_source" id="gambarSourceLinkEdit" value="link" <?= preg_match('#^https?://#i', (string) $artikel['gambar']) ? 'checked' : '' ?>>
+                        <label class="btn btn-outline-primary" for="gambarSourceLinkEdit">Gunakan Link</label>
+                    </div>
+                </div>
+
+                <div class="col-12 article-image-file-wrap">
+                    <label class="form-label">Ganti Foto <small class="text-muted">(kosongkan jika tidak ingin mengubah)</small></label>
+                    <input type="file" name="foto" class="form-control article-image-file-input" accept="image/*">
+                    <input type="hidden" name="gambar_cropped_data" class="article-image-cropped-data">
+                    <small class="text-muted">Jika memilih file, gambar dapat dicrop agar konsisten dengan tampilan interface.</small>
+                </div>
+
+                <div class="col-12 article-image-link-wrap d-none">
+                    <label class="form-label">Link Gambar</label>
+                    <input type="url" name="gambar_link" class="form-control article-image-link-input" placeholder="https://domain.com/gambar.jpg" value="<?= preg_match('#^https?://#i', (string) $artikel['gambar']) ? e($artikel['gambar']) : '' ?>">
+                    <small class="text-muted">Isi link gambar jika ingin menggunakan gambar dari luar website.</small>
                 </div>
 
                 <div class="col-12">
-                    <label class="form-label">Ganti Foto <small class="text-muted">(kosongkan jika tidak ingin mengubah)</small></label>
-                    <?php if ($artikel['gambar']): ?>
-                        <div class="mb-2">
-                            <img src="<?= BASE_URL . e($artikel['gambar']) ?>" height="80" alt="foto saat ini">
+                    <div class="article-image-preview-card p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="mb-0">Preview Gambar</h6>
+                                <small class="text-muted">Preview mengikuti rasio tampilan artikel di interface.</small>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary <?= $gambar_awal ? '' : 'd-none' ?> article-image-recrop-btn">Crop Ulang</button>
                         </div>
-                    <?php endif; ?>
-                    <input type="file" name="foto" class="form-control" accept="image/*">
+                        <div class="article-image-preview-frame <?= $gambar_awal ? 'has-image' : '' ?>">
+                            <img class="article-image-preview" src="<?= e($gambar_awal) ?>" alt="Preview gambar artikel">
+                            <div class="article-image-preview-empty">
+                                <i class="bi bi-image fs-1 mb-2"></i>
+                                <div>Preview gambar akan muncul di sini.</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="col-12">
                     <label class="form-label">Tag <small class="text-muted">(pisahkan dengan koma)</small></label>
-                    <input type="text" name="tag" class="form-control" value="<?= e($tags_string) ?>">
+                    <select name="tag[]" class="form-select select2-tags" multiple>
+                        <?php
+                        $existingTags = [];
+                        while ($t = $res_tag->fetch_assoc()) {
+                            $existingTags[] = $t['tag'];
+                        }
+                        $allTags = array_unique(array_merge($existingTags, $tags_array));
+                        sort($allTags);
+                        foreach ($allTags as $tag):
+                        ?>
+                            <option value="<?= e($tag) ?>" <?= in_array($tag, $tags_array, true) ? 'selected' : '' ?>>
+                                <?= e($tag) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
                 <div class="col-12">
@@ -104,21 +150,115 @@ $pageTitle = "Edit Artikel";
 </main>
 
 <script>
-document.querySelector('select[name="kategori"]').addEventListener('change', function () {
-    document.getElementById('kategori-baru-wrap').style.display = this.value === 'lain' ? 'block' : 'none';
+window.addEventListener('load', function () {
+    if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) {
+        return;
+    }
+
+    window.jQuery('.select2-kategori').select2({
+        theme: 'bootstrap4',
+        width: '100%',
+        tags: true,
+        placeholder: '-- Pilih atau ketik kategori --'
+    });
+
+    window.jQuery('.select2-tags').select2({
+        theme: 'bootstrap4',
+        width: '100%',
+        tags: true,
+        tokenSeparators: [','],
+        placeholder: 'Ketik tag lalu tekan Enter atau koma'
+    });
+
+    var form = document.querySelector('.article-form');
+    if (!form) {
+        return;
+    }
+
+    var sourceInputs = form.querySelectorAll('input[name="gambar_source"]');
+    var fileWrap = form.querySelector('.article-image-file-wrap');
+    var linkWrap = form.querySelector('.article-image-link-wrap');
+    var fileInput = form.querySelector('.article-image-file-input');
+    var linkInput = form.querySelector('.article-image-link-input');
+    var croppedInput = form.querySelector('.article-image-cropped-data');
+    var previewFrame = form.querySelector('.article-image-preview-frame');
+    var previewImage = form.querySelector('.article-image-preview');
+    var recropButton = form.querySelector('.article-image-recrop-btn');
+    var initialPreview = previewImage.getAttribute('src') || '';
+
+    function setPreview(src) {
+        if (src) {
+            previewImage.src = src;
+            previewFrame.classList.add('has-image');
+        } else {
+            previewImage.removeAttribute('src');
+            previewFrame.classList.remove('has-image');
+        }
+    }
+
+    function syncSourceState() {
+        var source = form.querySelector('input[name="gambar_source"]:checked').value;
+        var isFile = source === 'file';
+
+        fileWrap.classList.toggle('d-none', !isFile);
+        linkWrap.classList.toggle('d-none', isFile);
+        linkInput.required = !isFile;
+
+        if (!isFile) {
+            fileInput.value = '';
+            croppedInput.value = '';
+            recropButton.classList.add('d-none');
+            setPreview(linkInput.value.trim() || initialPreview);
+        } else if (croppedInput.value) {
+            setPreview(croppedInput.value);
+            recropButton.classList.remove('d-none');
+        } else {
+            setPreview(initialPreview);
+            recropButton.classList.toggle('d-none', !fileInput.files || !fileInput.files[0]);
+        }
+    }
+
+    function cropSelectedFile() {
+        if (!fileInput.files || !fileInput.files[0] || !window.SimpleImageCropper) {
+            return;
+        }
+
+        window.SimpleImageCropper.open({
+            file: fileInput.files[0],
+            aspectRatio: 16 / 9,
+            outputWidth: 1280,
+            onCrop: function (result) {
+                croppedInput.value = result.dataUrl;
+                setPreview(result.dataUrl);
+                recropButton.classList.remove('d-none');
+            }
+        });
+    }
+
+    sourceInputs.forEach(function (input) {
+        input.addEventListener('change', syncSourceState);
+    });
+
+    fileInput.addEventListener('change', function () {
+        if (fileInput.files && fileInput.files[0]) {
+            linkInput.value = '';
+            cropSelectedFile();
+        } else {
+            croppedInput.value = '';
+            setPreview(initialPreview);
+            recropButton.classList.add('d-none');
+        }
+    });
+
+    linkInput.addEventListener('input', function () {
+        setPreview(linkInput.value.trim() || initialPreview);
+    });
+
+    recropButton.addEventListener('click', cropSelectedFile);
+    syncSourceState();
 });
 </script>
 
-<?php if (!empty($_SESSION['swal_flash'])): ?>
-<?php $swal = $_SESSION['swal_flash']; unset($_SESSION['swal_flash']); ?>
-<script>
-Swal.fire({
-    icon: <?= json_encode($swal['icon'] ?? 'info') ?>,
-    title: <?= json_encode($swal['title'] ?? '') ?>,
-    text: <?= json_encode($swal['text'] ?? '') ?>,
-    confirmButtonColor: '#0d6efd'
-});
-</script>
-<?php endif; ?>
+<?php renderSwalFlash(); ?>
 
 <?php require_once __DIR__ . '/../layout/footer.php'; ?>

@@ -32,6 +32,7 @@
     <script src="<?= ADMIN_ASSETS ?>plugins/sweetalert2/js/sweetalert2.min.js"></script>
     <!-- Select2 -->
     <script src="<?= ADMIN_ASSETS ?>plugins/select2/js/select2.min.js"></script>
+    <script src="<?= ADMIN_ASSETS ?>plugins/simple-image-cropper/simple-image-cropper.js"></script>
 
 </body>
 </html>

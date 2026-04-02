@@ -31,6 +31,7 @@ $pageTitle = $pageTitle ?? 'Admin Yayasan IA';
     <!-- Select2 -->
     <link href="<?= ADMIN_ASSETS ?>plugins/select2/css/select2.min.css" rel="stylesheet" />
     <link href="<?= ADMIN_ASSETS ?>plugins/select2/css/select2-bootstrap4.css" rel="stylesheet" />
+    <link href="<?= ADMIN_ASSETS ?>plugins/simple-image-cropper/simple-image-cropper.css" rel="stylesheet" />
     <title><?= htmlspecialchars($pageTitle) ?></title>
 </head>
 <body>

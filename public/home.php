@@ -44,7 +44,7 @@ $res_artikel = $conn->query($sql_artikel);
                                         <div class="col-md-4 col-sm-12 col-xs-4 col-xxs-12">
                                             <div class="post--img">
                                                 <a href="<?= PUBLIC_URL ?>artikel-show.php?id_artikel=<?= $row['id_artikel'] ?>" class="thumb">
-                                                    <img src="<?= BASE_URL . e($row['gambar']) ?>" alt="<?= e($row['judul_artikel']) ?>">
+                                                    <img src="<?= e(mediaUrl($row['gambar'])) ?>" alt="<?= e($row['judul_artikel']) ?>">
                                                 </a>
                                                 <a href="<?= PUBLIC_URL ?>artikel-search.php?cari_ketegori=<?= urlencode($row['kategori']) ?>" class="cat"><?= e($row['kategori']) ?></a>
                                             </div>

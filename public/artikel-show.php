@@ -60,7 +60,7 @@ $pageTitle = e($artikel['judul_artikel']) . " - Yayasan IA";
 
                     <div class="post--img">
                         <?php if ($artikel['gambar']): ?>
-                        <img src="<?= BASE_URL . e($artikel['gambar']) ?>" class="img-responsive" alt="<?= e($artikel['judul_artikel']) ?>">
+                        <img src="<?= e(mediaUrl($artikel['gambar'])) ?>" class="img-responsive" alt="<?= e($artikel['judul_artikel']) ?>">
                         <?php endif; ?>
                         <a href="<?= PUBLIC_URL ?>artikel-search.php?cari_ketegori=<?= urlencode($artikel['kategori']) ?>" class="cat"><?= e($artikel['kategori']) ?></a>
                     </div>
@@ -98,7 +98,7 @@ $pageTitle = e($artikel['judul_artikel']) . " - Yayasan IA";
                         <div class="row">
                             <div class="col-sm-2">
                                 <?php if (!empty($penulis_data['foto'])): ?>
-                                    <img src="<?= BASE_URL . e($penulis_data['foto']) ?>" class="img-circle" alt="" width="70">
+                                    <img src="<?= e(mediaUrl($penulis_data['foto'])) ?>" class="img-circle" alt="" width="70">
                                 <?php else: ?>
                                     <div style="width:70px;height:70px;background:#ddd;border-radius:50%;display:flex;align-items:center;justify-content:center"><i class="fa fa-user fa-2x"></i></div>
                                 <?php endif; ?>
@@ -151,7 +151,7 @@ $pageTitle = e($artikel['judul_artikel']) . " - Yayasan IA";
                         <div class="post--item post--layout-2 pd--10-0">
                             <div class="post--img">
                                 <a href="<?= PUBLIC_URL ?>artikel-show.php?id_artikel=<?= $rel['id_artikel'] ?>">
-                                    <img src="<?= BASE_URL . e($rel['gambar']) ?>" alt="">
+                                    <img src="<?= e(mediaUrl($rel['gambar'])) ?>" alt="">
                                 </a>
                             </div>
                             <div class="post--info">
