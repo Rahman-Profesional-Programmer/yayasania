@@ -92,15 +92,39 @@ $result = $conn->query($sql);
 
 <script>
 function toggleArtikel(id, aksi) {
-    if (!confirm('Yakin ingin mengubah status artikel ini?')) return;
-    let url = aksi === 'enable' ? '<?= ADMIN_URL ?>artikel/enable.php' : '<?= ADMIN_URL ?>artikel/disable.php';
-    fetch(url, { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'id=' + id })
-        .then(() => location.reload());
+    Swal.fire({
+        title: 'Konfirmasi',
+        text: 'Yakin ingin mengubah status artikel ini?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#0d6efd',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya',
+        cancelButtonText: 'Batal'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            let url = aksi === 'enable' ? '<?= ADMIN_URL ?>artikel/enable.php' : '<?= ADMIN_URL ?>artikel/disable.php';
+            fetch(url, { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'id=' + id })
+                .then(() => location.reload());
+        }
+    });
 }
 function hapusArtikel(id) {
-    if (!confirm('Yakin ingin menghapus artikel ini?')) return;
-    fetch('<?= ADMIN_URL ?>artikel/delete.php', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'id=' + id })
-        .then(() => location.reload());
+    Swal.fire({
+        title: 'Konfirmasi Hapus',
+        text: 'Yakin ingin menghapus artikel ini?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            fetch('<?= ADMIN_URL ?>artikel/delete.php', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'id=' + id })
+                .then(() => location.reload());
+        }
+    });
 }
 </script>
 

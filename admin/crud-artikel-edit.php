@@ -27,6 +27,12 @@
     <link href="assets/css/light-theme.css" rel="stylesheet" />
     <link href="assets/css/semi-dark.css" rel="stylesheet" />
     <link href="assets/css/header-colors.css" rel="stylesheet" />
+    <!-- SweetAlert2 -->
+    <link href="assets/plugins/sweetalert2/css/sweetalert2.min.css" rel="stylesheet" />
+    <script src="assets/plugins/sweetalert2/js/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <link href="assets/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <link href="assets/plugins/select2/css/select2-bootstrap4.css" rel="stylesheet" />
 
   <!--plugins-->
   <link href="assets/plugins/simplebar/css/simplebar.css" rel="stylesheet" />
@@ -1098,12 +1104,12 @@
                                                         var inputText = document.getElementsByName("kategori_baru")[0].value;
 
                                                         if (selectedValue == "") {
-                                                            alert("Mohon pilih kategori!");
+                                                            Swal.fire({icon:'warning',title:'Perhatian',text:'Mohon pilih kategori!',confirmButtonColor:'#0d6efd'});
                                                             return false;
                                                         }
                                                         
                                                         if (selectedValue == "lain" && inputText == "") {
-                                                            alert("Mohon masukkan kategori baru!");
+                                                            Swal.fire({icon:'warning',title:'Perhatian',text:'Mohon masukkan kategori baru!',confirmButtonColor:'#0d6efd'});
                                                             return false;
                                                         } else if (selectedValue.split(" ").length >= 3) {
                                                             return true;
@@ -1441,154 +1447,164 @@
 
                         <script>
                             function deleteConfirmation(id) {
-                                let text = "Are you sure you want to delete this 'artikel'?";
-                                if (confirm(text)) {
-                                    // Jika pengguna memilih Yes, kirimkan permintaan AJAX untuk menghapus item
-                                    let xhttp = new XMLHttpRequest();
-                                    xhttp.onreadystatechange = function() {
-                                        if (this.readyState == 4 && this.status == 200) {
-                                        // Tampilkan pesan sukses setelah item dihapus
-                                        alert("Item deleted successfully.");
-                                        location.reload();
-                                        }
-                                    };
-                                    xhttp.open("POST", "crud-artikel-del-proses.php", true);
-                                    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                                    xhttp.send("id=" + id);
-                                } else {
-                                    // Jika pengguna memilih No, tampilkan pesan pembatalan
-                                    // document.getElementById("alert_delete").innerHTML = "Deletion canceled.";
-                                    alert("Deletion canceled.");
-                                    //    location.reload();
-                                }
+                                Swal.fire({
+                                    title: 'Konfirmasi Hapus',
+                                    text: "Apakah Anda yakin ingin menghapus artikel ini?",
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#0d6efd',
+                                    cancelButtonColor: '#6c757d',
+                                    confirmButtonText: 'Ya, hapus!',
+                                    cancelButtonText: 'Batal'
+                                }).then(function(result) {
+                                    if (result.isConfirmed) {
+                                        let xhttp = new XMLHttpRequest();
+                                        xhttp.onreadystatechange = function() {
+                                            if (this.readyState == 4 && this.status == 200) {
+                                                Swal.fire({icon:'success',title:'Berhasil',text:'Artikel berhasil dihapus.',confirmButtonColor:'#0d6efd'}).then(function(){location.reload();});
+                                            }
+                                        };
+                                        xhttp.open("POST", "crud-artikel-del-proses.php", true);
+                                        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                                        xhttp.send("id=" + id);
+                                    }
+                                });
                             }
                         </script>
 
                         <script>
                             function disableConfirmation(id) {
-                                let text = "Are you sure you want to disable this 'artikel' ?";
-                                if (confirm(text)) {
-
-                                    // Jika pengguna memilih Yes, kirimkan permintaan AJAX untuk menghapus item
-                                    let xhttp = new XMLHttpRequest();
-                                    xhttp.onreadystatechange = function() {
-                                        if (this.readyState == 4 && this.status == 200) {
-                                                // Tampilkan pesan sukses setelah item dihapus
-                                                alert("Item disabled successfully.");
-                                                location.reload();
+                                Swal.fire({
+                                    title: 'Konfirmasi Nonaktifkan',
+                                    text: "Apakah Anda yakin ingin menonaktifkan artikel ini?",
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#0d6efd',
+                                    cancelButtonColor: '#6c757d',
+                                    confirmButtonText: 'Ya, nonaktifkan!',
+                                    cancelButtonText: 'Batal'
+                                }).then(function(result) {
+                                    if (result.isConfirmed) {
+                                        let xhttp = new XMLHttpRequest();
+                                        xhttp.onreadystatechange = function() {
+                                            if (this.readyState == 4 && this.status == 200) {
+                                                Swal.fire({icon:'success',title:'Berhasil',text:'Artikel berhasil dinonaktifkan.',confirmButtonColor:'#0d6efd'}).then(function(){location.reload();});
                                             }
-                                    };
-
-                                    xhttp.open("POST", "crud-artikel-dis-proses.php", true);
-                                    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                                    xhttp.send("id=" + id);
-                                } else {
-                                    // Jika pengguna memilih No, tampilkan pesan pembatalan
-                                    // document.getElementById("alert_delete").innerHTML = "Deletion canceled.";
-                                    alert("Disable canceled.");
-                                    //    location.reload();
-                                }
+                                        };
+                                        xhttp.open("POST", "crud-artikel-dis-proses.php", true);
+                                        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                                        xhttp.send("id=" + id);
+                                    }
+                                });
                             }
                         </script>
 
                         <script>
                             function enableConfirmation(id) {
-                                let text = "Are you sure you want to enable this item?";
-                                if (confirm(text)) {
-                                    // Jika pengguna memilih Yes, kirimkan permintaan AJAX untuk menghapus item
-                                    let xhttp = new XMLHttpRequest();
-                                    xhttp.onreadystatechange = function() {
-                                        if (this.readyState == 4 && this.status == 200) {
-                                            // Tampilkan pesan sukses setelah item dihapus
-                                            alert("Item enabled successfully.");
-                                            location.reload();
-                                        }
-                                    };
-                                    xhttp.open("POST", "crud-artikel-ena-proses.php", true);
-                                    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                                    xhttp.send("id=" + id);
-                                } else {
-                                    // Jika pengguna memilih No, tampilkan pesan pembatalan
-                                    // document.getElementById("alert_delete").innerHTML = "Deletion canceled.";
-                                    alert("Enable canceled.");
-                                    //    location.reload();
-                                }
+                                Swal.fire({
+                                    title: 'Konfirmasi Aktifkan',
+                                    text: "Apakah Anda yakin ingin mengaktifkan item ini?",
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#0d6efd',
+                                    cancelButtonColor: '#6c757d',
+                                    confirmButtonText: 'Ya, aktifkan!',
+                                    cancelButtonText: 'Batal'
+                                }).then(function(result) {
+                                    if (result.isConfirmed) {
+                                        let xhttp = new XMLHttpRequest();
+                                        xhttp.onreadystatechange = function() {
+                                            if (this.readyState == 4 && this.status == 200) {
+                                                Swal.fire({icon:'success',title:'Berhasil',text:'Item berhasil diaktifkan.',confirmButtonColor:'#0d6efd'}).then(function(){location.reload();});
+                                            }
+                                        };
+                                        xhttp.open("POST", "crud-artikel-ena-proses.php", true);
+                                        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                                        xhttp.send("id=" + id);
+                                    }
+                                });
                             }
                         </script>
 
                     <!-- ============ js sub menu ============= -->
                         <script>
                           function deleteConfirmationSub(id) {
-                            let text = "Are you sure you want to delete sub menu ?";
-                            if (confirm(text)) {
-                              // Jika pengguna memilih Yes, kirimkan permintaan AJAX untuk menghapus item
-                              let xhttp = new XMLHttpRequest();
-                              xhttp.onreadystatechange = function() {
-                                if (this.readyState == 4 && this.status == 200) {
-                                  // Tampilkan pesan sukses setelah item dihapus
-                                  alert("Item deleted successfully.");
-                                  location.reload();
+                            Swal.fire({
+                                title: 'Konfirmasi Hapus',
+                                text: "Apakah Anda yakin ingin menghapus sub menu ini?",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#0d6efd',
+                                cancelButtonColor: '#6c757d',
+                                confirmButtonText: 'Ya, hapus!',
+                                cancelButtonText: 'Batal'
+                            }).then(function(result) {
+                                if (result.isConfirmed) {
+                                    let xhttp = new XMLHttpRequest();
+                                    xhttp.onreadystatechange = function() {
+                                        if (this.readyState == 4 && this.status == 200) {
+                                            Swal.fire({icon:'success',title:'Berhasil',text:'Sub menu berhasil dihapus.',confirmButtonColor:'#0d6efd'}).then(function(){location.reload();});
+                                        }
+                                    };
+                                    xhttp.open("POST", "crud-del-sub-menu-proses.php", true);
+                                    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                                    xhttp.send("id=" + id);
                                 }
-                              };
-                              xhttp.open("POST", "crud-del-sub-menu-proses.php", true);
-                              xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                              xhttp.send("id=" + id);
-                            } else {
-                              // Jika pengguna memilih No, tampilkan pesan pembatalan
-                              // document.getElementById("alert_delete").innerHTML = "Deletion canceled.";
-                              alert("Deletion canceled.");
-                              //    location.reload();
-                            }
+                            });
                           }
                         </script>
 
                         <script>
                           function disableConfirmationSub(id) {
-                            let text = "Are you sure you want to disable sub menu?";
-                            if (confirm(text)) {
-                              // Jika pengguna memilih Yes, kirimkan permintaan AJAX untuk menghapus item
-                              let xhttp = new XMLHttpRequest();
-                              xhttp.onreadystatechange = function() {
-                                if (this.readyState == 4 && this.status == 200) {
-                                  // Tampilkan pesan sukses setelah item dihapus
-                                  alert("Item disabled successfully.");
-                                  location.reload();
+                            Swal.fire({
+                                title: 'Konfirmasi Nonaktifkan',
+                                text: "Apakah Anda yakin ingin menonaktifkan sub menu ini?",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#0d6efd',
+                                cancelButtonColor: '#6c757d',
+                                confirmButtonText: 'Ya, nonaktifkan!',
+                                cancelButtonText: 'Batal'
+                            }).then(function(result) {
+                                if (result.isConfirmed) {
+                                    let xhttp = new XMLHttpRequest();
+                                    xhttp.onreadystatechange = function() {
+                                        if (this.readyState == 4 && this.status == 200) {
+                                            Swal.fire({icon:'success',title:'Berhasil',text:'Sub menu berhasil dinonaktifkan.',confirmButtonColor:'#0d6efd'}).then(function(){location.reload();});
+                                        }
+                                    };
+                                    xhttp.open("POST", "crud-disable-sub-menu-proses.php", true);
+                                    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                                    xhttp.send("id=" + id);
                                 }
-                              };
-                              xhttp.open("POST", "crud-disable-sub-menu-proses.php", true);
-                              xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                              xhttp.send("id=" + id);
-                            } else {
-                              // Jika pengguna memilih No, tampilkan pesan pembatalan
-                              // document.getElementById("alert_delete").innerHTML = "Deletion canceled.";
-                              alert("Disable canceled.");
-                              //    location.reload();
-                            }
+                            });
                           }
                         </script>
 
                         <script>
                           function enableConfirmationSub(id) {
-                            let text = "Are you sure you want to enable sub menu?";
-                            if (confirm(text)) {
-                              // Jika pengguna memilih Yes, kirimkan permintaan AJAX untuk menghapus item
-                              let xhttp = new XMLHttpRequest();
-                              xhttp.onreadystatechange = function() {
-                                if (this.readyState == 4 && this.status == 200) {
-                                  // Tampilkan pesan sukses setelah item dihapus
-                                  alert("Item enabled successfully.");
-                                  location.reload();
+                            Swal.fire({
+                                title: 'Konfirmasi Aktifkan',
+                                text: "Apakah Anda yakin ingin mengaktifkan sub menu ini?",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#0d6efd',
+                                cancelButtonColor: '#6c757d',
+                                confirmButtonText: 'Ya, aktifkan!',
+                                cancelButtonText: 'Batal'
+                            }).then(function(result) {
+                                if (result.isConfirmed) {
+                                    let xhttp = new XMLHttpRequest();
+                                    xhttp.onreadystatechange = function() {
+                                        if (this.readyState == 4 && this.status == 200) {
+                                            Swal.fire({icon:'success',title:'Berhasil',text:'Sub menu berhasil diaktifkan.',confirmButtonColor:'#0d6efd'}).then(function(){location.reload();});
+                                        }
+                                    };
+                                    xhttp.open("POST", "crud-enable-sub-menu-proses.php", true);
+                                    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                                    xhttp.send("id=" + id);
                                 }
-                              };
-                              xhttp.open("POST", "crud-enable-sub-menu-proses.php", true);
-                              xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                              xhttp.send("id=" + id);
-                            } else {
-                              // Jika pengguna memilih No, tampilkan pesan pembatalan
-                              // document.getElementById("alert_delete").innerHTML = "Deletion canceled.";
-                              alert("Enable canceled.");
-                              //    location.reload();
-                            }
+                            });
                           }
                         </script>
                     <!-- ============ js sub menu ============= -->
@@ -1942,6 +1958,8 @@
     <script src="assets/js/pace.min.js"></script>
     <!--app-->
     <script src="assets/js/app.js"></script>
+    <!-- Select2 -->
+    <script src="assets/plugins/select2/js/select2.min.js"></script>
 
     <!--notification js -->
     <script src="assets/plugins/notifications/js/lobibox.min.js"></script>
@@ -2006,7 +2024,7 @@
         // ...
         
         // Menampilkan notifikasi bahwa data telah berhasil diubah
-        alert('Data telah berhasil diubah!');
+        Swal.fire({icon:'success',title:'Berhasil',text:'Data telah berhasil diubah!',confirmButtonColor:'#0d6efd'});
         
         // Menutup modal
         modalEdit.style.display = 'none';

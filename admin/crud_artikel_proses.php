@@ -118,21 +118,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 mysqli_query($conn, $sql_tag);
             }
 
-            echo '<script>
-              window.onload = function() {
-                alert("Artikel berhasil ditambahkan");
-                window.location.href = "crud-artikel.php";
-              };
-            </script>';
+            echo '<link rel="stylesheet" href="assets/plugins/sweetalert2/css/sweetalert2.min.css">';
+            echo '<script src="assets/plugins/sweetalert2/js/sweetalert2.min.js"></script>';
+            echo '<script>Swal.fire({icon:"success",title:"Berhasil",text:"Artikel berhasil ditambahkan",confirmButtonColor:"#0d6efd"}).then(function(){window.location.href="crud-artikel.php";});</script>';
 
         } else {
 
-            echo '<script>
-              window.onload = function() {
-                alert("Artikel gagal ditambahkan");
-                window.location.href = "crud-artikel.php";
-              };
-            </script>';
+            echo '<link rel="stylesheet" href="assets/plugins/sweetalert2/css/sweetalert2.min.css">';
+            echo '<script src="assets/plugins/sweetalert2/js/sweetalert2.min.js"></script>';
+            echo '<script>Swal.fire({icon:"error",title:"Gagal",text:"Artikel gagal ditambahkan",confirmButtonColor:"#0d6efd"}).then(function(){window.location.href="crud-artikel.php";});</script>';
         }
 
     } else {

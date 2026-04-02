@@ -193,22 +193,70 @@ $menu_for_select = $conn->query("SELECT * FROM menu_utama ORDER BY urutan");
 
 <script>
 function toggleMenu(id, aksi) {
-    if (!confirm('Ubah status menu ini?')) return;
-    let url = aksi === 'enable' ? '<?= ADMIN_URL ?>menu/enable.php' : '<?= ADMIN_URL ?>menu/disable.php';
-    fetch(url, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'id='+id}).then(() => location.reload());
+    Swal.fire({
+        title: 'Konfirmasi',
+        text: 'Ubah status menu ini?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#0d6efd',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya',
+        cancelButtonText: 'Batal'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            let url = aksi === 'enable' ? '<?= ADMIN_URL ?>menu/enable.php' : '<?= ADMIN_URL ?>menu/disable.php';
+            fetch(url, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'id='+id}).then(() => location.reload());
+        }
+    });
 }
 function hapusMenu(id) {
-    if (!confirm('Hapus menu ini?')) return;
-    fetch('<?= ADMIN_URL ?>menu/delete.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'id='+id}).then(() => location.reload());
+    Swal.fire({
+        title: 'Konfirmasi Hapus',
+        text: 'Hapus menu ini?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            fetch('<?= ADMIN_URL ?>menu/delete.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'id='+id}).then(() => location.reload());
+        }
+    });
 }
 function toggleSub(id, aksi) {
-    if (!confirm('Ubah status sub menu ini?')) return;
-    let url = aksi === 'enable' ? '<?= ADMIN_URL ?>menu/sub/enable.php' : '<?= ADMIN_URL ?>menu/sub/disable.php';
-    fetch(url, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'id='+id}).then(() => location.reload());
+    Swal.fire({
+        title: 'Konfirmasi',
+        text: 'Ubah status sub menu ini?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#0d6efd',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya',
+        cancelButtonText: 'Batal'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            let url = aksi === 'enable' ? '<?= ADMIN_URL ?>menu/sub/enable.php' : '<?= ADMIN_URL ?>menu/sub/disable.php';
+            fetch(url, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'id='+id}).then(() => location.reload());
+        }
+    });
 }
 function hapusSub(id) {
-    if (!confirm('Hapus sub menu ini?')) return;
-    fetch('<?= ADMIN_URL ?>menu/sub/delete.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'id='+id}).then(() => location.reload());
+    Swal.fire({
+        title: 'Konfirmasi Hapus',
+        text: 'Hapus sub menu ini?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            fetch('<?= ADMIN_URL ?>menu/sub/delete.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'id='+id}).then(() => location.reload());
+        }
+    });
 }
 </script>
 

@@ -28,6 +28,10 @@
     <script src="<?= ADMIN_ASSETS ?>js/pace.min.js"></script>
     <!--app-->
     <script src="<?= ADMIN_ASSETS ?>js/app.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="<?= ADMIN_ASSETS ?>plugins/sweetalert2/js/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="<?= ADMIN_ASSETS ?>plugins/select2/js/select2.min.js"></script>
 
 </body>
 </html>

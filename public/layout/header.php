@@ -17,6 +17,11 @@ $pageTitle = $pageTitle ?? 'Yayasan Ihsanul Amal Alabio';
     <link rel="stylesheet" href="<?= PUBLIC_ASSETS ?>css/responsive-style.css">
     <link rel="stylesheet" href="<?= PUBLIC_ASSETS ?>css/colors/theme-color-1.css">
     <link rel="stylesheet" href="<?= PUBLIC_ASSETS ?>css/custom.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="<?= PUBLIC_ASSETS ?>plugins/sweetalert2/css/sweetalert2.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="<?= PUBLIC_ASSETS ?>plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="<?= PUBLIC_ASSETS ?>plugins/select2/css/select2-bootstrap4.css">
     <!--[if lt IE 9]>
     <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
     <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>

@@ -30,22 +30,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // menampilkan notifikasi sukses menggunakan SweetAlert
 
 
-    echo '<script>
-    window.onload = function() {
-      alert("Menu berhasil ditambahkan");
-      window.location.href = "crud-menu.php";
-    };
-    </script>';
+    echo '<link rel="stylesheet" href="assets/plugins/sweetalert2/css/sweetalert2.min.css">';
+    echo '<script src="assets/plugins/sweetalert2/js/sweetalert2.min.js"></script>';
+    echo '<script>Swal.fire({icon:"success",title:"Berhasil",text:"Menu berhasil ditambahkan",confirmButtonColor:"#0d6efd"}).then(function(){window.location.href="crud-menu.php";});</script>';
 
     // echo '<meta http-equiv="refresh" content="5; URL=crud-menu.php" />';
   } else {
     // menampilkan notifikasi gagal menggunakan SweetAlert
-    echo '<script>
-    window.onload = function() {
-      alert("Menu gagal ditambahkan");
-      window.location.href = "crud-menu.php";
-    };
-    </script>';
+    echo '<link rel="stylesheet" href="assets/plugins/sweetalert2/css/sweetalert2.min.css">';
+    echo '<script src="assets/plugins/sweetalert2/js/sweetalert2.min.js"></script>';
+    echo '<script>Swal.fire({icon:"error",title:"Gagal",text:"Menu gagal ditambahkan",confirmButtonColor:"#0d6efd"}).then(function(){window.location.href="crud-menu.php";});</script>';
   }
 
 mysqli_close($conn);

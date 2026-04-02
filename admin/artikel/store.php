@@ -68,8 +68,12 @@ if ($stmt->execute()) {
         $stmt_tag->close();
     }
 
-    echo '<script>alert("Artikel berhasil ditambahkan"); window.location.href="' . ADMIN_URL . 'artikel/index.php";</script>';
+    echo '<link rel="stylesheet" href="' . ADMIN_ASSETS . 'plugins/sweetalert2/css/sweetalert2.min.css">';
+    echo '<script src="' . ADMIN_ASSETS . 'plugins/sweetalert2/js/sweetalert2.min.js"></script>';
+    echo '<script>Swal.fire({icon:"success",title:"Berhasil",text:"Artikel berhasil ditambahkan",confirmButtonColor:"#0d6efd"}).then(function(){window.location.href="' . ADMIN_URL . 'artikel/index.php";});</script>';
 } else {
     $stmt->close();
-    echo '<script>alert("Artikel gagal ditambahkan"); window.history.back();</script>';
+    echo '<link rel="stylesheet" href="' . ADMIN_ASSETS . 'plugins/sweetalert2/css/sweetalert2.min.css">';
+    echo '<script src="' . ADMIN_ASSETS . 'plugins/sweetalert2/js/sweetalert2.min.js"></script>';
+    echo '<script>Swal.fire({icon:"error",title:"Gagal",text:"Artikel gagal ditambahkan",confirmButtonColor:"#0d6efd"}).then(function(){window.history.back();});</script>';
 }

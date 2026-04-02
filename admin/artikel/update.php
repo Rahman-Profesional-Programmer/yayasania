@@ -61,8 +61,12 @@ if ($stmt->execute()) {
         }
         $stmt_tag->close();
     }
-    echo '<script>alert("Artikel berhasil diupdate"); window.location.href="' . ADMIN_URL . 'artikel/index.php";</script>';
+    echo '<link rel="stylesheet" href="' . ADMIN_ASSETS . 'plugins/sweetalert2/css/sweetalert2.min.css">';
+    echo '<script src="' . ADMIN_ASSETS . 'plugins/sweetalert2/js/sweetalert2.min.js"></script>';
+    echo '<script>Swal.fire({icon:"success",title:"Berhasil",text:"Artikel berhasil diupdate",confirmButtonColor:"#0d6efd"}).then(function(){window.location.href="' . ADMIN_URL . 'artikel/index.php";});</script>';
 } else {
     $stmt->close();
-    echo '<script>alert("Artikel gagal diupdate"); window.history.back();</script>';
+    echo '<link rel="stylesheet" href="' . ADMIN_ASSETS . 'plugins/sweetalert2/css/sweetalert2.min.css">';
+    echo '<script src="' . ADMIN_ASSETS . 'plugins/sweetalert2/js/sweetalert2.min.js"></script>';
+    echo '<script>Swal.fire({icon:"error",title:"Gagal",text:"Artikel gagal diupdate",confirmButtonColor:"#0d6efd"}).then(function(){window.history.back();});</script>';
 }

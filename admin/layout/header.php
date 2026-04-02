@@ -26,6 +26,11 @@ $pageTitle = $pageTitle ?? 'Admin Yayasan IA';
     <link href="<?= ADMIN_ASSETS ?>css/light-theme.css" rel="stylesheet" />
     <link href="<?= ADMIN_ASSETS ?>css/semi-dark.css" rel="stylesheet" />
     <link href="<?= ADMIN_ASSETS ?>css/header-colors.css" rel="stylesheet" />
+    <!-- SweetAlert2 -->
+    <link href="<?= ADMIN_ASSETS ?>plugins/sweetalert2/css/sweetalert2.min.css" rel="stylesheet" />
+    <!-- Select2 -->
+    <link href="<?= ADMIN_ASSETS ?>plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <link href="<?= ADMIN_ASSETS ?>plugins/select2/css/select2-bootstrap4.css" rel="stylesheet" />
     <title><?= htmlspecialchars($pageTitle) ?></title>
 </head>
 <body>

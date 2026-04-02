@@ -27,6 +27,12 @@
     <link href="assets/css/light-theme.css" rel="stylesheet" />
     <link href="assets/css/semi-dark.css" rel="stylesheet" />
     <link href="assets/css/header-colors.css" rel="stylesheet" />
+    <!-- SweetAlert2 -->
+    <link href="assets/plugins/sweetalert2/css/sweetalert2.min.css" rel="stylesheet" />
+    <script src="assets/plugins/sweetalert2/js/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <link href="assets/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <link href="assets/plugins/select2/css/select2-bootstrap4.css" rel="stylesheet" />
 
     <title>Admin Yayasan IA</title>
 </head>
@@ -1577,6 +1583,8 @@
     <script src="assets/js/pace.min.js"></script>
     <!--app-->
     <script src="assets/js/app.js"></script>
+    <!-- Select2 -->
+    <script src="assets/plugins/select2/js/select2.min.js"></script>
 
     <!-- Bootstrap bundle JS -->
     <script src="assets/js/bootstrap.bundle.min.js"></script>
@@ -1648,7 +1656,7 @@
         // ...
         
         // Menampilkan notifikasi bahwa data telah berhasil diubah
-        alert('Data telah berhasil diubah!');
+        Swal.fire({icon:'success',title:'Berhasil',text:'Data telah berhasil diubah!',confirmButtonColor:'#0d6efd'});
         
         // Menutup modal
         modalEdit.style.display = 'none';

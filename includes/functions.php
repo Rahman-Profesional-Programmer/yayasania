@@ -29,16 +29,20 @@ function requireLogin(): void
 /**
  * Sanitasi input agar aman dicetak di HTML
  */
-function e(string $str): string
+function e($value): string
 {
-    return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
+    if ($value === null) {
+        return '';
+    }
+
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
 /**
  * Potong teks panjang untuk preview
  */
-function excerpt(string $text, int $length = 200): string
+function excerpt($text, int $length = 200): string
 {
-    $text = strip_tags($text);
+    $text = strip_tags((string) ($text ?? ''));
     return (mb_strlen($text) > $length) ? mb_substr($text, 0, $length) . '...' : $text;
 }

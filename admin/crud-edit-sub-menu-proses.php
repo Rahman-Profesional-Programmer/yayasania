@@ -34,19 +34,13 @@ if ($conn->connect_error) {
     // var_dump($sql);
     // echo "<---- sql. <br>";
     if (mysqli_query($conn, $sql)) {
-      echo '<script>
-        window.onload = function() {
-          alert("Sub menu berhasil diedit");
-          window.location.href = "crud-menu.php";
-        };
-      </script>';
+      echo '<link rel="stylesheet" href="assets/plugins/sweetalert2/css/sweetalert2.min.css">';
+      echo '<script src="assets/plugins/sweetalert2/js/sweetalert2.min.js"></script>';
+      echo '<script>Swal.fire({icon:"success",title:"Berhasil",text:"Sub menu berhasil diedit",confirmButtonColor:"#0d6efd"}).then(function(){window.location.href="crud-menu.php";});</script>';
     } else {
-      echo '<script>
-        window.onload = function() {
-          alert("Sub menu gagal diedit");
-          window.location.href = "crud-menu.php";
-        };
-      </script>';
+      echo '<link rel="stylesheet" href="assets/plugins/sweetalert2/css/sweetalert2.min.css">';
+      echo '<script src="assets/plugins/sweetalert2/js/sweetalert2.min.js"></script>';
+      echo '<script>Swal.fire({icon:"error",title:"Gagal",text:"Sub menu gagal diedit",confirmButtonColor:"#0d6efd"}).then(function(){window.location.href="crud-menu.php";});</script>';
     }
 
     mysqli_close($conn);
