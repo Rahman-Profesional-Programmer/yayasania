@@ -255,6 +255,13 @@ window.addEventListener('load', function () {
     });
 
     recropButton.addEventListener('click', cropSelectedFile);
+
+    // ── Fallback: klik area file wrap juga buka file picker ─────
+    fileWrap.addEventListener('click', function (e) {
+        if (e.target === fileInput || e.target.closest('.article-image-recrop-btn')) { return; }
+        fileInput.click();
+    });
+
     syncSourceState();
 });
 </script>
