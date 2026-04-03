@@ -30,7 +30,9 @@ $email = strtolower(trim($_POST['email'] ?? ''));
 $password = (string) ($_POST['password'] ?? '');
 $role = ($_POST['role'] ?? 'user') === 'admin' ? 'admin' : 'user';
 $enable = (int) ($_POST['enable'] ?? 1) === 1 ? 1 : 0;
-$foto = trim($_POST['foto'] ?? '');
+$fotoSource = $_POST['foto_source'] ?? 'link';
+$fotoLink = trim((string) ($_POST['foto_link'] ?? ''));
+$fotoCroppedData = trim((string) ($_POST['foto_cropped_data'] ?? ''));
 $diskripsi = trim($_POST['diskripsi'] ?? '');
 $facebook = trim($_POST['facebook'] ?? '');
 $instagram = trim($_POST['instagram'] ?? '');
@@ -82,6 +84,67 @@ if (($user['role'] ?? 'user') === 'admin' && $role !== 'admin') {
     }
 }
 
+$foto = $user['foto'] ?? '';
+
+if ($fotoSource === 'file') {
+    if ($fotoCroppedData !== '') {
+        $savedImage = saveBase64Image($fotoCroppedData);
+        if ($savedImage === null) {
+            setSwalFlash('error', 'Crop gagal', 'Hasil crop foto profil tidak valid. Silakan coba lagi.');
+            redirect(ADMIN_URL . 'users/edit.php?id=' . $id);
+        }
+        $foto = $savedImage;
+    } else {
+        $uploadedPhoto = $_FILES['foto_file'] ?? null;
+
+        if ($uploadedPhoto && $uploadedPhoto['error'] !== UPLOAD_ERR_NO_FILE) {
+            if ($uploadedPhoto['error'] !== UPLOAD_ERR_OK) {
+                setSwalFlash('error', 'Upload gagal', 'Foto profil gagal diunggah.');
+                redirect(ADMIN_URL . 'users/edit.php?id=' . $id);
+            }
+
+            if ($uploadedPhoto['size'] > 5_000_000) {
+                setSwalFlash('error', 'Upload gagal', 'Ukuran foto profil terlalu besar (maks 5MB).');
+                redirect(ADMIN_URL . 'users/edit.php?id=' . $id);
+            }
+
+            $extension = strtolower(pathinfo($uploadedPhoto['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+            if (!in_array($extension, $allowed, true)) {
+                setSwalFlash('error', 'Upload gagal', 'Format foto profil tidak diizinkan.');
+                redirect(ADMIN_URL . 'users/edit.php?id=' . $id);
+            }
+
+            if (!is_dir(UPLOAD_PATH)) {
+                mkdir(UPLOAD_PATH, 0755, true);
+            }
+
+            $fileName = time() . '-' . bin2hex(random_bytes(4)) . '.' . $extension;
+            $filePath = UPLOAD_PATH . $fileName;
+            if (!move_uploaded_file($uploadedPhoto['tmp_name'], $filePath)) {
+                setSwalFlash('error', 'Upload gagal', 'Gagal memindahkan foto profil.');
+                redirect(ADMIN_URL . 'users/edit.php?id=' . $id);
+            }
+
+            $foto = 'storage/uploads/foto/' . $fileName;
+        }
+    }
+} elseif ($fotoLink !== '') {
+    if (!filter_var($fotoLink, FILTER_VALIDATE_URL)) {
+        setSwalFlash('error', 'Link tidak valid', 'Gunakan URL foto profil yang benar.');
+        redirect(ADMIN_URL . 'users/edit.php?id=' . $id);
+    }
+
+    if (mb_strlen($fotoLink) > 500) {
+        setSwalFlash('error', 'Link terlalu panjang', 'Panjang link foto melebihi batas penyimpanan database.');
+        redirect(ADMIN_URL . 'users/edit.php?id=' . $id);
+    }
+
+    $foto = $fotoLink;
+} elseif (array_key_exists('foto_link', $_POST) && $fotoLink === '') {
+    $foto = '';
+}
+
 mysqli_begin_transaction($conn);
 
 try {
@@ -115,6 +178,7 @@ try {
     if ($id === currentUserId()) {
         $_SESSION['name'] = $name;
         $_SESSION['role'] = $role;
+        $_SESSION['foto'] = $foto;
     }
 
     mysqli_commit($conn);

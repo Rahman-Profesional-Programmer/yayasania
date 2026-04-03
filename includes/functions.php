@@ -37,7 +37,16 @@ function hydrateSessionUser(): void
         session_start();
     }
 
-    if (empty($_SESSION['email']) || (!empty($_SESSION['role']) && !empty($_SESSION['user_id']))) {
+    if (empty($_SESSION['email'])) {
+        return;
+    }
+
+    if (
+        !empty($_SESSION['role'])
+        && !empty($_SESSION['user_id'])
+        && array_key_exists('foto', $_SESSION)
+        && array_key_exists('name', $_SESSION)
+    ) {
         return;
     }
 
@@ -47,7 +56,7 @@ function hydrateSessionUser(): void
         return;
     }
 
-    $stmt = $conn->prepare('SELECT id, name_show, role FROM users WHERE email = ? LIMIT 1');
+    $stmt = $conn->prepare('SELECT id, name_show, role, foto FROM users WHERE email = ? LIMIT 1');
     if (!$stmt) {
         return;
     }
@@ -64,6 +73,7 @@ function hydrateSessionUser(): void
     $_SESSION['user_id'] = (int) $user['id'];
     $_SESSION['name'] = $user['name_show'];
     $_SESSION['role'] = $user['role'] ?? 'user';
+    $_SESSION['foto'] = $user['foto'] ?? '';
 }
 
 /**

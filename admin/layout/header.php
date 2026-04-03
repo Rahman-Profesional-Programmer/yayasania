@@ -1,6 +1,14 @@
 <?php
 // Setiap halaman admin harus set $pageTitle sebelum include file ini
 $pageTitle = $pageTitle ?? 'Admin Yayasan IA';
+$headerAvatar = ADMIN_ASSETS . 'images/avatars/avatar-1.png';
+
+if (!empty($_SESSION['foto']) && function_exists('mediaUrl')) {
+    $resolvedAvatar = mediaUrl($_SESSION['foto']);
+    if ($resolvedAvatar !== '') {
+        $headerAvatar = $resolvedAvatar;
+    }
+}
 ?>
 <!doctype html>
 <html lang="id">
@@ -55,7 +63,7 @@ $pageTitle = $pageTitle ?? 'Admin Yayasan IA';
                 <li class="nav-item dropdown dropdown-user-setting">
                     <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown">
                         <div class="user-setting d-flex align-items-center gap-3">
-                            <img src="<?= ADMIN_ASSETS ?>images/avatars/avatar-1.png" class="user-img" alt="">
+                            <img src="<?= htmlspecialchars($headerAvatar, ENT_QUOTES, 'UTF-8') ?>" class="user-img" alt="Avatar pengguna">
                             <div class="d-none d-sm-block">
                                 <p class="user-name mb-0"><?= htmlspecialchars($_SESSION['name'] ?? 'Admin') ?></p>
                                 <small class="mb-0 dropdown-user-designation">

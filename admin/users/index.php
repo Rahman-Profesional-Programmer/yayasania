@@ -15,6 +15,7 @@ FROM users");
 $stats = $statsResult ? ($statsResult->fetch_assoc() ?: []) : [];
 
 $users = $conn->query("SELECT * FROM users ORDER BY FIELD(role, 'admin', 'user'), enable DESC, id DESC");
+$defaultAvatar = ADMIN_ASSETS . 'images/avatars/avatar-1.png';
 ?>
 <?php require_once __DIR__ . '/../layout/header.php'; ?>
 <?php require_once __DIR__ . '/../layout/sidebar.php'; ?>
@@ -101,7 +102,7 @@ $users = $conn->query("SELECT * FROM users ORDER BY FIELD(role, 'admin', 'user')
                     <h6 class="mb-0">Tambah Pengguna</h6>
                 </div>
                 <div class="card-body">
-                    <form class="row g-3" action="<?= ADMIN_URL ?>users/store.php" method="POST">
+                    <form class="row g-3 user-photo-form" action="<?= ADMIN_URL ?>users/store.php" method="POST" enctype="multipart/form-data">
                         <div class="col-12">
                             <label class="form-label">Nama Tampil</label>
                             <input type="text" name="name_show" class="form-control" placeholder="Nama lengkap" required>
@@ -129,8 +130,42 @@ $users = $conn->query("SELECT * FROM users ORDER BY FIELD(role, 'admin', 'user')
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Foto Profil</label>
-                            <input type="text" name="foto" class="form-control" placeholder="storage/uploads/foto/nama-file.jpg atau URL">
+                            <label class="form-label d-block mb-2">Sumber Foto Profil</label>
+                            <div class="d-flex flex-wrap gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input user-photo-source" type="radio" name="foto_source" id="create-foto-source-link" value="link" checked>
+                                    <label class="form-check-label" for="create-foto-source-link">Link</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input user-photo-source" type="radio" name="foto_source" id="create-foto-source-file" value="file">
+                                    <label class="form-check-label" for="create-foto-source-file">File</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 user-photo-link-group">
+                            <label class="form-label">Link Foto Profil</label>
+                            <input type="url" name="foto_link" class="form-control user-photo-link-input" placeholder="https://domain.com/avatar.jpg">
+                            <div class="form-text">Gunakan link gambar publik. Preview di bawah akan menyesuaikan tampilan avatar pada header.</div>
+                        </div>
+                        <div class="col-12 user-photo-file-group d-none">
+                            <label class="form-label">Upload Foto Profil</label>
+                            <input type="file" name="foto_file" class="form-control user-photo-file-input" accept="image/*">
+                            <input type="hidden" name="foto_cropped_data" class="user-photo-cropped-data">
+                            <div class="form-text">File akan di-crop 1:1 agar cocok untuk avatar/header.</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="border rounded-4 p-3 bg-light user-photo-preview-card">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle overflow-hidden border bg-white flex-shrink-0 user-photo-preview-shell" style="width:88px;height:88px;">
+                                        <img src="<?= e($defaultAvatar) ?>" alt="Preview avatar" class="w-100 h-100 object-fit-cover user-photo-preview-image">
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="fw-semibold">Preview Avatar</div>
+                                        <div class="text-muted small mb-2">Preview kecil ini mengikuti bentuk tampilan pada header admin.</div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary d-none user-photo-recrop-button">Crop Ulang 1:1</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Facebook</label>
@@ -175,12 +210,7 @@ $users = $conn->query("SELECT * FROM users ORDER BY FIELD(role, 'admin', 'user')
                             <?php if ($users && $users->num_rows > 0): ?>
                                 <?php while ($row = $users->fetch_assoc()): ?>
                                     <?php
-                                    $avatar = ADMIN_ASSETS . 'images/avatars/avatar-1.png';
-                                    if (!empty($row['foto'])) {
-                                        $avatar = preg_match('#^https?://#', $row['foto'])
-                                            ? $row['foto']
-                                            : BASE_URL . ltrim($row['foto'], '/');
-                                    }
+                                        $avatar = mediaUrl($row['foto'] ?? '') ?: $defaultAvatar;
                                     ?>
                                     <tr>
                                         <td>
@@ -262,12 +292,116 @@ $users = $conn->query("SELECT * FROM users ORDER BY FIELD(role, 'admin', 'user')
 </main>
 
 <script>
-(function ($) {
-    $('.select2-basic').select2({
-        theme: 'bootstrap4',
-        width: '100%'
+window.addEventListener('load', function () {
+    if (window.jQuery) {
+        jQuery('.select2-basic').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+    }
+
+    if (typeof SimpleImageCropper === 'undefined') {
+        return;
+    }
+
+    var defaultAvatar = <?= json_encode($defaultAvatar) ?>;
+
+    document.querySelectorAll('.user-photo-form').forEach(function (form) {
+        var sourceInputs = form.querySelectorAll('.user-photo-source');
+        var linkGroup = form.querySelector('.user-photo-link-group');
+        var fileGroup = form.querySelector('.user-photo-file-group');
+        var linkInput = form.querySelector('.user-photo-link-input');
+        var fileInput = form.querySelector('.user-photo-file-input');
+        var croppedInput = form.querySelector('.user-photo-cropped-data');
+        var previewImage = form.querySelector('.user-photo-preview-image');
+        var recropButton = form.querySelector('.user-photo-recrop-button');
+        var lastFile = null;
+
+        function currentSource() {
+            var checked = form.querySelector('.user-photo-source:checked');
+            return checked ? checked.value : 'link';
+        }
+
+        function updatePreview(value) {
+            previewImage.src = value || defaultAvatar;
+        }
+
+        function syncMode() {
+            var isFile = currentSource() === 'file';
+            linkGroup.classList.toggle('d-none', isFile);
+            fileGroup.classList.toggle('d-none', !isFile);
+
+            if (!isFile) {
+                if (fileInput) {
+                    fileInput.value = '';
+                }
+                if (croppedInput) {
+                    croppedInput.value = '';
+                }
+                lastFile = null;
+                recropButton.classList.add('d-none');
+                updatePreview(linkInput.value.trim());
+            } else if (!croppedInput.value) {
+                updatePreview(defaultAvatar);
+            }
+        }
+
+        function openCropper(file) {
+            if (!file) {
+                return;
+            }
+
+            lastFile = file;
+            SimpleImageCropper.open({
+                file: file,
+                aspectRatio: 1,
+                aspectRatioLabel: '1:1',
+                outputWidth: 600,
+                onCrop: function (result) {
+                    croppedInput.value = result.dataUrl;
+                    updatePreview(result.dataUrl);
+                    recropButton.classList.remove('d-none');
+                }
+            });
+        }
+
+        sourceInputs.forEach(function (input) {
+            input.addEventListener('change', syncMode);
+        });
+
+        if (linkInput) {
+            linkInput.addEventListener('input', function () {
+                if (currentSource() === 'link') {
+                    updatePreview(linkInput.value.trim());
+                }
+            });
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', function () {
+                croppedInput.value = '';
+                recropButton.classList.add('d-none');
+
+                if (fileInput.files && fileInput.files[0]) {
+                    openCropper(fileInput.files[0]);
+                    return;
+                }
+
+                updatePreview(defaultAvatar);
+            });
+        }
+
+        if (recropButton) {
+            recropButton.addEventListener('click', function () {
+                if (lastFile) {
+                    openCropper(lastFile);
+                }
+            });
+        }
+
+        syncMode();
     });
-})(jQuery);
+});
 
 function runUserAction(url, id, successText) {
     fetch(url, {

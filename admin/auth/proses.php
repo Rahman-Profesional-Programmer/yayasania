@@ -38,6 +38,7 @@ if ($result->num_rows === 1) {
             $_SESSION['name']  = $row['name_show'];
             $_SESSION['email'] = $row['email'];
             $_SESSION['role']  = $row['role'] ?? 'user';
+            $_SESSION['foto']  = $row['foto'] ?? '';
             $stmt->close();
             redirect(ADMIN_URL . 'menu/index.php');
         } else {

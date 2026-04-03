@@ -61,11 +61,13 @@
         var stage = overlay.querySelector('[data-cropper-stage]');
         var image = overlay.querySelector('[data-cropper-image]');
         var zoomInput = overlay.querySelector('[data-cropper-zoom]');
+        var ratioText = overlay.querySelector('.simple-cropper-footer span');
         var closeButtons = overlay.querySelectorAll('[data-cropper-close], [data-cropper-cancel]');
         var applyButton = overlay.querySelector('[data-cropper-apply]');
         var aspectRatio = options.aspectRatio || (16 / 9);
         var outputWidth = options.outputWidth || 1280;
         var outputHeight = Math.round(outputWidth / aspectRatio);
+        var aspectRatioLabel = options.aspectRatioLabel || '16:9';
         var dragging = false;
         var dragStartX = 0;
         var dragStartY = 0;
@@ -120,6 +122,7 @@
         function close() {
             overlay.classList.remove('is-open');
             stage.classList.remove('is-dragging');
+            stage.style.aspectRatio = '';
             destroyObjectUrl();
             image.removeAttribute('src');
             applyButton.onclick = null;
@@ -220,6 +223,10 @@
             }
         };
 
+        stage.style.aspectRatio = String(aspectRatio);
+        if (ratioText) {
+            ratioText.textContent = 'Rasio crop: ' + aspectRatioLabel;
+        }
         image.src = objectUrl;
         overlay.classList.add('is-open');
     }

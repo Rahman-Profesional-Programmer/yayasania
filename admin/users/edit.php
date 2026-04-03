@@ -22,6 +22,9 @@ if (!$user) {
 
 $pageTitle = 'Edit Pengguna';
 $isCurrentUser = currentUserId() === (int) $user['id'];
+$defaultAvatar = ADMIN_ASSETS . 'images/avatars/avatar-1.png';
+$currentAvatar = mediaUrl($user['foto'] ?? '') ?: $defaultAvatar;
+$currentPhotoSource = isExternalUrl($user['foto'] ?? '') ? 'link' : 'file';
 ?>
 <?php require_once __DIR__ . '/../layout/header.php'; ?>
 <?php require_once __DIR__ . '/../layout/sidebar.php'; ?>
@@ -43,15 +46,7 @@ $isCurrentUser = currentUserId() === (int) $user['id'];
         <div class="col-12 col-lg-4">
             <div class="card border shadow-none h-100">
                 <div class="card-body text-center p-4">
-                    <?php
-                    $avatar = ADMIN_ASSETS . 'images/avatars/avatar-1.png';
-                    if (!empty($user['foto'])) {
-                        $avatar = preg_match('#^https?://#', $user['foto'])
-                            ? $user['foto']
-                            : BASE_URL . ltrim($user['foto'], '/');
-                    }
-                    ?>
-                    <img src="<?= e($avatar) ?>" class="rounded-circle p-1 border mb-3" width="110" height="110" alt="avatar">
+                    <img src="<?= e($currentAvatar) ?>" class="rounded-circle p-1 border mb-3" width="110" height="110" alt="avatar">
                     <h5 class="mb-1"><?= e($user['name_show'] ?: '-') ?></h5>
                     <p class="text-muted mb-2"><?= e($user['email']) ?></p>
                     <?php if (($user['role'] ?? 'user') === 'admin'): ?>
@@ -80,7 +75,7 @@ $isCurrentUser = currentUserId() === (int) $user['id'];
                     <h6 class="mb-0">Form Edit Pengguna</h6>
                 </div>
                 <div class="card-body">
-                    <form class="row g-3" action="<?= ADMIN_URL ?>users/update.php" method="POST">
+                    <form class="row g-3 user-photo-form" action="<?= ADMIN_URL ?>users/update.php" method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="id" value="<?= (int) $user['id'] ?>">
 
                         <div class="col-md-6">
@@ -116,8 +111,42 @@ $isCurrentUser = currentUserId() === (int) $user['id'];
                             <?php endif; ?>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Foto Profil</label>
-                            <input type="text" name="foto" class="form-control" value="<?= e($user['foto']) ?>">
+                            <label class="form-label d-block mb-2">Sumber Foto Profil</label>
+                            <div class="d-flex flex-wrap gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input user-photo-source" type="radio" name="foto_source" id="edit-foto-source-link" value="link" <?= $currentPhotoSource === 'link' ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="edit-foto-source-link">Link</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input user-photo-source" type="radio" name="foto_source" id="edit-foto-source-file" value="file" <?= $currentPhotoSource === 'file' ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="edit-foto-source-file">File</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 user-photo-link-group <?= $currentPhotoSource === 'file' ? 'd-none' : '' ?>">
+                            <label class="form-label">Link Foto Profil</label>
+                            <input type="url" name="foto_link" class="form-control user-photo-link-input" value="<?= $currentPhotoSource === 'link' ? e($user['foto']) : '' ?>" placeholder="https://domain.com/avatar.jpg">
+                            <div class="form-text">Kosongkan jika ingin menghapus avatar link saat mode link aktif.</div>
+                        </div>
+                        <div class="col-12 user-photo-file-group <?= $currentPhotoSource === 'link' ? 'd-none' : '' ?>">
+                            <label class="form-label">Upload Foto Profil</label>
+                            <input type="file" name="foto_file" class="form-control user-photo-file-input" accept="image/*">
+                            <input type="hidden" name="foto_cropped_data" class="user-photo-cropped-data">
+                            <div class="form-text">Upload file baru bila ingin mengganti foto. Gambar akan di-crop 1:1.</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="border rounded-4 p-3 bg-light user-photo-preview-card">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle overflow-hidden border bg-white flex-shrink-0 user-photo-preview-shell" style="width:88px;height:88px;">
+                                        <img src="<?= e($currentAvatar) ?>" alt="Preview avatar" class="w-100 h-100 object-fit-cover user-photo-preview-image">
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="fw-semibold">Preview Avatar</div>
+                                        <div class="text-muted small mb-2">Preview kecil ini mengikuti bentuk tampilan avatar pada header admin.</div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary d-none user-photo-recrop-button">Crop Ulang 1:1</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Facebook</label>
@@ -143,12 +172,117 @@ $isCurrentUser = currentUserId() === (int) $user['id'];
 </main>
 
 <script>
-(function ($) {
-    $('.select2-basic').select2({
-        theme: 'bootstrap4',
-        width: '100%'
+window.addEventListener('load', function () {
+    if (window.jQuery) {
+        jQuery('.select2-basic').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+    }
+
+    if (typeof SimpleImageCropper === 'undefined') {
+        return;
+    }
+
+    var defaultAvatar = <?= json_encode($defaultAvatar) ?>;
+
+    document.querySelectorAll('.user-photo-form').forEach(function (form) {
+        var sourceInputs = form.querySelectorAll('.user-photo-source');
+        var linkGroup = form.querySelector('.user-photo-link-group');
+        var fileGroup = form.querySelector('.user-photo-file-group');
+        var linkInput = form.querySelector('.user-photo-link-input');
+        var fileInput = form.querySelector('.user-photo-file-input');
+        var croppedInput = form.querySelector('.user-photo-cropped-data');
+        var previewImage = form.querySelector('.user-photo-preview-image');
+        var recropButton = form.querySelector('.user-photo-recrop-button');
+        var initialPreview = previewImage.getAttribute('src') || defaultAvatar;
+        var lastFile = null;
+
+        function currentSource() {
+            var checked = form.querySelector('.user-photo-source:checked');
+            return checked ? checked.value : 'link';
+        }
+
+        function updatePreview(value) {
+            previewImage.src = value || defaultAvatar;
+        }
+
+        function syncMode() {
+            var isFile = currentSource() === 'file';
+            linkGroup.classList.toggle('d-none', isFile);
+            fileGroup.classList.toggle('d-none', !isFile);
+
+            if (!isFile) {
+                if (fileInput) {
+                    fileInput.value = '';
+                }
+                if (croppedInput) {
+                    croppedInput.value = '';
+                }
+                lastFile = null;
+                recropButton.classList.add('d-none');
+                updatePreview(linkInput.value.trim() || defaultAvatar);
+            } else if (!croppedInput.value) {
+                updatePreview(initialPreview);
+            }
+        }
+
+        function openCropper(file) {
+            if (!file) {
+                return;
+            }
+
+            lastFile = file;
+            SimpleImageCropper.open({
+                file: file,
+                aspectRatio: 1,
+                aspectRatioLabel: '1:1',
+                outputWidth: 600,
+                onCrop: function (result) {
+                    croppedInput.value = result.dataUrl;
+                    updatePreview(result.dataUrl);
+                    recropButton.classList.remove('d-none');
+                }
+            });
+        }
+
+        sourceInputs.forEach(function (input) {
+            input.addEventListener('change', syncMode);
+        });
+
+        if (linkInput) {
+            linkInput.addEventListener('input', function () {
+                if (currentSource() === 'link') {
+                    updatePreview(linkInput.value.trim());
+                }
+            });
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', function () {
+                croppedInput.value = '';
+                recropButton.classList.add('d-none');
+
+                if (fileInput.files && fileInput.files[0]) {
+                    openCropper(fileInput.files[0]);
+                    return;
+                }
+
+                updatePreview(initialPreview);
+            });
+        }
+
+        if (recropButton) {
+            recropButton.addEventListener('click', function () {
+                if (lastFile) {
+                    openCropper(lastFile);
+                }
+            });
+        }
+
+        syncMode();
     });
-})(jQuery);
+});
 </script>
 
 <?php renderSwalFlash(); ?>
