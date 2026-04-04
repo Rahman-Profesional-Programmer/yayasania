@@ -28,6 +28,13 @@
             </a>
         </li>
 
+        <li>
+            <a href="<?= ADMIN_URL ?>top-news/index.php">
+                <div class="parent-icon"><i class="lni lni-star"></i></div>
+                <div class="menu-title">Set Top 5 News</div>
+            </a>
+        </li>
+
         <li class="menu-label">Sistem</li>
 
         <?php if (isAdmin()): ?>

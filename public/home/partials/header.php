@@ -145,8 +145,7 @@
                             echo "0 results";
                         }
 
-                        // Menutup koneksi
-                        $conn->close();
+                        // Koneksi tidak ditutup di sini agar bisa dipakai oleh partial lain
                     ?>
 
 
