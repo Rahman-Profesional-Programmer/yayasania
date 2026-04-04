@@ -6,9 +6,95 @@ requireLogin();
 
 $pageTitle = "Artikel & Berita";
 
-// Ambil semua artikel
-$sql    = "SELECT * FROM artikel WHERE hapus = 1 ORDER BY id_artikel DESC";
-$result = $conn->query($sql);
+// ── Filter & pagination params ───────────────────────────────────
+$search    = trim($_GET['search']   ?? '');
+$fKategori = trim($_GET['kategori'] ?? '');
+$fPenulis  = trim($_GET['penulis']  ?? '');
+$fStatus   = $_GET['status']    ?? '';        // '' | '1' | '0'
+$fDateFrom = trim($_GET['date_from'] ?? '');
+$fDateTo   = trim($_GET['date_to']   ?? '');
+$_pp     = (int)($_GET['per_page'] ?? 0);
+$perPage = in_array($_pp, [10, 50, 100]) ? $_pp : 10;
+$curPage   = max(1, (int)($_GET['page'] ?? 1));
+
+$filterActive = ($search !== '' || $fKategori !== '' || $fPenulis !== ''
+    || $fStatus !== '' || $fDateFrom !== '' || $fDateTo !== '');
+
+// ── Build WHERE clause (prepared statement) ──────────────────────
+$conditions = ['a.hapus = 1'];
+$params     = [];
+$types      = '';
+
+if ($search !== '') {
+    $like         = '%' . $search . '%';
+    $conditions[] = '(a.judul_artikel LIKE ? OR a.kategori LIKE ?
+        OR EXISTS (SELECT 1 FROM artikel_tag _t WHERE _t.id_artikel = a.id_artikel AND _t.tag LIKE ?))';
+    $params[]     = $like;
+    $params[]     = $like;
+    $params[]     = $like;
+    $types       .= 'sss';
+}
+if ($fKategori !== '') {
+    $conditions[] = 'a.kategori = ?';
+    $params[]     = $fKategori;
+    $types       .= 's';
+}
+if ($fPenulis !== '') {
+    $conditions[] = 'a.penulis LIKE ?';
+    $params[]     = '%' . $fPenulis . '%';
+    $types       .= 's';
+}
+if ($fStatus !== '') {
+    $conditions[] = 'a.enable = ?';
+    $params[]     = (int)$fStatus;
+    $types       .= 'i';
+}
+if ($fDateFrom !== '') {
+    $conditions[] = 'DATE(a.tanggal_update) >= ?';
+    $params[]     = $fDateFrom;
+    $types       .= 's';
+}
+if ($fDateTo !== '') {
+    $conditions[] = 'DATE(a.tanggal_update) <= ?';
+    $params[]     = $fDateTo;
+    $types       .= 's';
+}
+
+$where = implode(' AND ', $conditions);
+
+// ── Count total rows ─────────────────────────────────────────────
+$cntStmt = $conn->prepare("SELECT COUNT(*) AS n FROM artikel a WHERE {$where}");
+if (!empty($params)) {
+    $cntStmt->bind_param($types, ...$params);
+}
+$cntStmt->execute();
+$totalRows  = (int)$cntStmt->get_result()->fetch_assoc()['n'];
+$cntStmt->close();
+
+$totalPages = max(1, (int)ceil($totalRows / $perPage));
+$curPage    = min($curPage, $totalPages);
+$offset     = ($curPage - 1) * $perPage;
+
+// ── Fetch paged data ─────────────────────────────────────────────
+$dataStmt  = $conn->prepare(
+    "SELECT a.* FROM artikel a WHERE {$where} ORDER BY a.id_artikel DESC LIMIT ? OFFSET ?"
+);
+$allParams = array_merge($params, [$perPage, $offset]);
+$allTypes  = $types . 'ii';
+$dataStmt->bind_param($allTypes, ...$allParams);
+$dataStmt->execute();
+$result = $dataStmt->get_result();
+
+// ── Dropdown options ─────────────────────────────────────────────
+$katRows = $conn->query(
+    "SELECT DISTINCT kategori FROM artikel WHERE hapus = 1 AND kategori <> '' ORDER BY kategori ASC"
+);
+
+// ── URL helper: preserve all current params, override page ───────
+function pageUrl(int $p): string {
+    $q = array_merge($_GET, ['page' => $p]);
+    return '?' . http_build_query($q);
+}
 ?>
 <?php require_once __DIR__ . '/../layout/header.php'; ?>
 <?php require_once __DIR__ . '/../layout/sidebar.php'; ?>
@@ -26,7 +112,6 @@ $result = $conn->query($sql);
             </nav>
         </div>
         <div class="ms-auto d-flex gap-2">
-            <!-- Tombol import bulk via Excel -->
             <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#importArtikelModal">
                 <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Excel
             </button>
@@ -34,10 +119,91 @@ $result = $conn->query($sql);
         </div>
     </div>
 
+    <!-- ── Filter Card ──────────────────────────────────────────── -->
+    <div class="card mb-3">
+        <div class="card-body py-2 px-3">
+            <form method="get" action="" id="filterForm">
+                <div class="row g-2 align-items-end">
+                    <div class="col-sm-6 col-md-3">
+                        <label class="form-label small mb-1 fw-semibold">Cari Artikel</label>
+                        <input type="text" name="search" class="form-control form-control-sm"
+                               placeholder="Judul, kategori, atau tag&hellip;"
+                               value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                    <div class="col-sm-6 col-md-2">
+                        <label class="form-label small mb-1 fw-semibold">Kategori</label>
+                        <select name="kategori" class="form-select form-select-sm">
+                            <option value="">Semua Kategori</option>
+                            <?php if ($katRows): while ($k = $katRows->fetch_assoc()): ?>
+                            <option value="<?= htmlspecialchars($k['kategori'], ENT_QUOTES, 'UTF-8') ?>"
+                                <?= $fKategori === $k['kategori'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($k['kategori'], ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                            <?php endwhile; endif; ?>
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-md-2">
+                        <label class="form-label small mb-1 fw-semibold">Penulis</label>
+                        <input type="text" name="penulis" class="form-control form-control-sm"
+                               placeholder="Email penulis&hellip;"
+                               value="<?= htmlspecialchars($fPenulis, ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                    <div class="col-sm-6 col-md-1">
+                        <label class="form-label small mb-1 fw-semibold">Status</label>
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="">Semua</option>
+                            <option value="1" <?= $fStatus === '1' ? 'selected' : '' ?>>Aktif</option>
+                            <option value="0" <?= $fStatus === '0' ? 'selected' : '' ?>>Nonaktif</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-md-2">
+                        <label class="form-label small mb-1 fw-semibold">Dari Tanggal</label>
+                        <input type="date" name="date_from" class="form-control form-control-sm"
+                               value="<?= htmlspecialchars($fDateFrom, ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                    <div class="col-sm-6 col-md-2">
+                        <label class="form-label small mb-1 fw-semibold">Sampai Tanggal</label>
+                        <input type="date" name="date_to" class="form-control form-control-sm"
+                               value="<?= htmlspecialchars($fDateTo, ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                    <div class="col-sm-12 col-md-auto d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm px-3">
+                            <i class="bi bi-search me-1"></i>Filter
+                        </button>
+                        <a href="?" class="btn btn-outline-secondary btn-sm px-3">
+                            <i class="bi bi-x-lg me-1"></i>Reset
+                        </a>
+                    </div>
+                </div>
+                <!-- Preserve per_page when re-submitting filters -->
+                <input type="hidden" name="per_page" id="formPerPage" value="<?= $perPage ?>">
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Data Card ────────────────────────────────────────────── -->
     <div class="card">
         <div class="card-body">
-            <h6 class="mb-3 text-uppercase">Daftar Artikel</h6>
-            <hr/>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="mb-0 text-uppercase">
+                    Daftar Artikel
+                    <?php if ($filterActive): ?>
+                    <span class="badge bg-warning text-dark ms-1" style="font-size:.65rem;">Filter Aktif</span>
+                    <?php endif; ?>
+                </h6>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small">
+                        <?= $totalRows > 0 ? ($offset + 1) . '&ndash;' . min($offset + $perPage, $totalRows) : '0' ?>
+                        dari <strong><?= $totalRows ?></strong>
+                    </span>
+                    <select class="form-select form-select-sm w-auto" onchange="changePerPage(this.value)">
+                        <?php foreach ([10, 50, 100] as $n): ?>
+                        <option value="<?= $n ?>" <?= $perPage === $n ? 'selected' : '' ?>><?= $n ?>&nbsp;/ hal</option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <hr class="my-2"/>
             <div class="table-responsive">
                 <table class="table align-middle">
                     <thead class="table-light">
@@ -85,11 +251,51 @@ $result = $conn->query($sql);
                         </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
-                        <tr><td colspan="7" class="text-center">Belum ada artikel</td></tr>
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <?php if ($filterActive): ?>
+                                <i class="bi bi-search me-1"></i>Tidak ada artikel yang sesuai dengan filter.
+                                <?php else: ?>
+                                Belum ada artikel.
+                                <?php endif; ?>
+                            </td>
+                        </tr>
                     <?php endif; ?>
                     </tbody>
                 </table>
             </div>
+
+            <?php if ($totalPages > 1): ?>
+            <!-- ── Pagination ──────────────────────────────────── -->
+            <nav class="mt-3" aria-label="Navigasi halaman artikel">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    <li class="page-item <?= $curPage <= 1 ? 'disabled' : '' ?>">
+                        <a class="page-link" href="<?= htmlspecialchars(pageUrl($curPage - 1)) ?>">&lsaquo;</a>
+                    </li>
+                    <?php
+                    $pRange = 2;
+                    $pStart = max(1, $curPage - $pRange);
+                    $pEnd   = min($totalPages, $curPage + $pRange);
+                    if ($pStart > 1): ?>
+                        <li class="page-item"><a class="page-link" href="<?= htmlspecialchars(pageUrl(1)) ?>">1</a></li>
+                        <?php if ($pStart > 2): ?><li class="page-item disabled"><span class="page-link">&hellip;</span></li><?php endif; ?>
+                    <?php endif;
+                    for ($p = $pStart; $p <= $pEnd; $p++): ?>
+                    <li class="page-item <?= $p === $curPage ? 'active' : '' ?>">
+                        <a class="page-link" href="<?= htmlspecialchars(pageUrl($p)) ?>"><?= $p ?></a>
+                    </li>
+                    <?php endfor;
+                    if ($pEnd < $totalPages):
+                        if ($pEnd < $totalPages - 1): ?><li class="page-item disabled"><span class="page-link">&hellip;</span></li><?php endif; ?>
+                        <li class="page-item"><a class="page-link" href="<?= htmlspecialchars(pageUrl($totalPages)) ?>"><?= $totalPages ?></a></li>
+                    <?php endif; ?>
+                    <li class="page-item <?= $curPage >= $totalPages ? 'disabled' : '' ?>">
+                        <a class="page-link" href="<?= htmlspecialchars(pageUrl($curPage + 1)) ?>">&rsaquo;</a>
+                    </li>
+                </ul>
+            </nav>
+            <?php endif; ?>
+
         </div>
     </div>
 </main>
@@ -129,6 +335,15 @@ function hapusArtikel(id) {
                 .then(() => location.reload());
         }
     });
+}
+
+function changePerPage(n) {
+    var hiddenField = document.getElementById('formPerPage');
+    if (hiddenField) { hiddenField.value = n; }
+    var url = new URL(window.location.href);
+    url.searchParams.set('per_page', n);
+    url.searchParams.set('page', 1);
+    window.location.href = url.toString();
 }
 
 // ── Import modal JS ────────────────────────────────────────────
