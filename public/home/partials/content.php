@@ -89,7 +89,7 @@
                 </div>
 
                 <!-- Main Content Start -->
-                <?php require_once __DIR__ . '/content/main--content-03.php'; ?>
+                <?php // require_once __DIR__ . '/content/main--content-03.php'; ?>
                 <!-- Main Content End -->
                     
                 <!-- Advertisement Start -->
@@ -98,11 +98,11 @@
 
                 <div class="row">
                     <!-- Main Content Start -->
-                    <?php require_once __DIR__ . '/content/main--content-04.php'; ?>
+                    <?php // require_once __DIR__ . '/content/main--content-04.php'; ?>
                     <!-- Main Content End -->
 
                     <!-- Main Sidebar Start -->
-                    <?php require_once __DIR__ . '/content/main--sidebar-02.php'; ?>
+                    <?php // require_once __DIR__ . '/content/main--sidebar-02.php'; ?>
                     <!-- Main Sidebar End -->
                 </div> 
 
